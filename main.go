@@ -1,19 +1,19 @@
 package main
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 
-	_ "github.com/jackc/pgx"
+	"github.com/leumas3003/db-client/sqlclient"
 )
 
 const (
-	queryGetuser = "SELECT id, email FROM users WHERE id=%d;"
+	queryGetuser = "SELECT id, email FROM public.users WHERE id=%d;"
+	DbConn       = "host=%s port=%s user=%s password=%s dbname=%s sslmode=disable"
 )
 
 var (
-	dbClient *sql.DB
+	dbClient sqlclient.SqlClient
 )
 
 type User struct {
@@ -22,27 +22,43 @@ type User struct {
 }
 
 func init() {
+	sqlclient.StartMockServer()
+
 	var err error
-	dbClient, err = sql.Open("postgre", "this is the conecction string")
+	dbClient, err = sqlclient.Open("postgres", fmt.Sprintf(DbConn, "localhost", "5432", "USERNAME", "", "DATABASENAME"))
 	if err != nil {
 		panic(err)
 	}
 }
 func main() {
-	user, err := GetUser(123)
+	user, err := GetUser(1)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Print(user.Email)
+	fmt.Println(user.Id)
+	fmt.Println(user.Email)
 }
 
 func GetUser(id int64) (*User, error) {
+	sqlclient.AddMock(sqlclient.Mock{
+		Query:   fmt.Sprintf("SELECT id, email FROM public.users WHERE id=%v;", id),
+		Args:    []interface{}{1},
+		Error:   errors.New("error creating query"),
+		Columns: []string{"id", "email"},
+		Rows: [][]interface{}{
+			{1, "email1"},
+			{2, "email2"},
+		},
+	})
+
 	rows, err := dbClient.Query(fmt.Sprintf(queryGetuser, id))
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
+
 	var user User
-	for rows.Next() {
+	for rows.HasNext() {
 		if err := rows.Scan(&user.Id, &user.Email); err != nil {
 			return nil, err
 		}
