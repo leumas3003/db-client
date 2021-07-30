@@ -7,14 +7,7 @@ DB Client for postgresql
  3. On PostgreSQL up and running use this script to create and add a new table into a database
 
 ```sql
-CREATE TABLE IF NOT EXISTS public.movies
-(
-    id integer NOT NULL DEFAULT nextval('movies_id_seq'::regclass),
-    movie_name text COLLATE pg_catalog."default",
-    genre text COLLATE pg_catalog."default",
-    duration text COLLATE pg_catalog."default",
-    CONSTRAINT movies_pkey PRIMARY KEY (id)
-)
+TODO
 ```
 
  4. Replace in main.go ln 27 with your PostgreSQL data
